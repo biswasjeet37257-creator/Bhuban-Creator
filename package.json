@@ -1,0 +1,11 @@
+{
+  "name": "bhuban-creator-studio",
+  "version": "1.0.0",
+  "description": "Bhuban Creator Studio - AI-powered content creation tools",
+  "scripts": {
+    "build": "echo 'No build needed - static HTML'"
+  },
+  "keywords": ["creator", "studio", "ai", "content"],
+  "author": "Bhuban",
+  "license": "MIT"
+}
