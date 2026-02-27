@@ -72,18 +72,11 @@ const PathwayManager = {
      */
     validateCurrentPath: function () {
         if (typeof PathwayMonitor !== 'undefined') {
-            const initResult = PathwayMonitor.init();
-            if (initResult && typeof initResult.then === 'function') {
-                // If init returns a promise (developer version)
-                initResult.then(report => {
-                    if (report && report.health && report.health.overall !== 'healthy') {
-                        console.warn('⚠️ Pathway Monitor detected issues:', report.getSummary ? report.getSummary() : report);
-                    }
-                });
-            } else {
-                // If init doesn't return a promise (shared version)
-                console.log('✅ Pathway Monitor initialized (basic)');
-            }
+            PathwayMonitor.init().then(report => {
+                if (report.health.overall !== 'healthy') {
+                    console.warn('⚠️ Pathway Monitor detected issues:', report.getSummary());
+                }
+            });
         }
     }
 };

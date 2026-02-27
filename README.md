@@ -1,15 +1,15 @@
-# Bhuban Developer Dashboard
+# Bhuban Creator Studio
 
-Advanced developer tools with AI-powered debugging and monitoring.
+Professional creator studio with AI-powered tools for content creation.
 
 ## Features
 
-- 🔍 Real-time monitoring
-- 🤖 AI bug analysis
-- 🔧 Autonomous fixing
-- 📊 Performance tracking
-- 🎯 Advanced dashboard
-- 🚀 Pathway monitoring
+- 🎬 Video upload and management
+- 🎨 AI thumbnail generation
+- 📝 Script generation with AI
+- 📊 Analytics dashboard
+- ✂️ Shorts creation tools
+- 🎯 Content optimization
 
 ## Deploy to Vercel
 
@@ -20,7 +20,7 @@ vercel --prod
 Or with custom name:
 
 ```bash
-vercel --prod --name bhuban-developer
+vercel --prod --name bhuban-creator
 ```
 
 ## Tech Stack

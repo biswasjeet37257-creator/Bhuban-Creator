@@ -1,54 +1,11 @@
 {
-  "name": "bhuban-developer-dashboard",
+  "name": "bhuban-creator-studio",
   "version": "1.0.0",
-  "description": "Bhuban Developer Dashboard with Integrated Terminal",
-  "main": "electron-main.js",
+  "description": "Bhuban Creator Studio - AI-powered content creation tools",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "build": "exit 0",
-    "dist": "electron-builder --win --x64"
+    "build": "exit 0"
   },
-  "build": {
-    "appId": "com.bhuban.developer",
-    "productName": "Bhuban Developer Dashboard",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "**/*",
-      "!dist/**/*",
-      "!node_modules/**/*"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        },
-        {
-          "target": "portable",
-          "arch": ["x64"]
-        }
-      ],
-      "icon": "icon.ico"
-    },
-    "nsis": {
-      "oneClick": true,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    },
-    "portable": {
-      "artifactName": "Bhuban-Developer-Dashboard-Portable.exe"
-    }
-  },
-  "dependencies": {
-    "electron": "^28.0.0"
-  },
-  "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.0.0"
-  }
+  "keywords": ["creator", "studio", "ai", "content"],
+  "author": "Bhuban",
+  "license": "MIT"
 }
