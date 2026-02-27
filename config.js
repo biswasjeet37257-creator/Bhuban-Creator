@@ -7,7 +7,7 @@
 const BhubanConfig = {
     // API Configuration
     api: {
-        baseUrl: window.location.origin,
+        baseUrl: 'https://shree-ai.vercel.app',
         endpoints: {
             videos: '/api/videos',
             video: (id) => `/api/videos/${id}`,

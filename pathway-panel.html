@@ -1,0 +1,363 @@
+<!-- Pathway System Monitoring Panel -->
+<div class="card" id="pathway-system" style="grid-column: span 12; display: none;">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-route"></i>
+            Pathway System Monitor
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <span class="card-badge" id="pathwayOverallStatus">Checking...</span>
+            <button class="header-btn" onclick="PathwayMonitor.runFullDiagnostics()" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="header-btn" onclick="PathwayMonitor.exportReport()" title="Export Report">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+        <div class="stat-card">
+            <div class="stat-icon cyan">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-label">Valid Pathways</div>
+            <div class="stat-value" id="pathwayValidCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon pink">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-label">Warnings</div>
+            <div class="stat-value" id="pathwayWarningCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-label">Errors</div>
+            <div class="stat-value" id="pathwayErrorCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon cyan">
+                <i class="fas fa-route"></i>
+            </div>
+            <div class="stat-label">Total Pathways</div>
+            <div class="stat-value" id="pathwayTotalCount">0</div>
+        </div>
+    </div>
+
+    <!-- Pathway Categories -->
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+        <!-- Navigation Pathways -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-compass" style="color: var(--accent-cyan);"></i>
+                Navigation Pathways
+            </h3>
+            <div id="navigationPathways" style="max-height: 300px; overflow-y: auto;">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- API Pathways -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-plug" style="color: var(--accent-purple);"></i>
+                API Pathways
+            </h3>
+            <div id="apiPathways" style="max-height: 300px; overflow-y: auto;">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Storage Pathways -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-database" style="color: var(--accent-pink);"></i>
+                Storage Pathways
+            </h3>
+            <div id="storagePathways" style="max-height: 300px; overflow-y: auto;">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- File Pathways -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-file-code" style="color: var(--accent-green);"></i>
+                File Pathways
+            </h3>
+            <div id="filePathways" style="max-height: 300px; overflow-y: auto;">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Info -->
+    <div style="margin-top: 24px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px;">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-cog" style="color: var(--accent-orange);"></i>
+            Configuration
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">API Base URL</div>
+                <div style="font-size: 14px; font-weight: 600; color: var(--accent-cyan);" id="configApiBase">-</div>
+            </div>
+            <div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Pages</div>
+                <div style="font-size: 14px; font-weight: 600;" id="configTotalPages">-</div>
+            </div>
+            <div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Endpoints</div>
+                <div style="font-size: 14px; font-weight: 600;" id="configTotalEndpoints">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+        <button class="control-btn start" onclick="showPathwayMap()">
+            <i class="fas fa-map"></i>
+            <span>View Pathway Map</span>
+        </button>
+        <button class="control-btn restart" onclick="testAllPathways()">
+            <i class="fas fa-vial"></i>
+            <span>Test All Pathways</span>
+        </button>
+        <button class="control-btn" onclick="viewDocumentation()">
+            <i class="fas fa-book"></i>
+            <span>View Documentation</span>
+        </button>
+    </div>
+</div>
+
+<style>
+.pathway-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.pathway-item:hover {
+    border-color: var(--accent-cyan);
+    transform: translateX(4px);
+}
+
+.pathway-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pathway-path {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+    margin-top: 4px;
+}
+
+.pathway-status {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.pathway-status.valid {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.pathway-status.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.pathway-status.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error);
+}
+
+.control-btn {
+    padding: 12px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.control-btn:hover {
+    border-color: var(--accent-cyan);
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+}
+
+.control-btn.start {
+    background: var(--accent-gradient-green);
+    border-color: transparent;
+    color: white;
+}
+
+.control-btn.restart {
+    background: var(--accent-gradient);
+    border-color: transparent;
+    color: white;
+}
+</style>
+
+<script>
+// Pathway System UI Functions
+async function initPathwaySystem() {
+    console.log('Initializing Pathway System...');
+    
+    // Initialize monitor
+    let report;
+    const initResult = PathwayMonitor.init();
+    if (initResult && typeof initResult.then === 'function') {
+        // If init returns a promise (developer version)
+        report = await initResult;
+    } else {
+        // If init doesn't return a promise (shared version), just continue
+        console.log('✅ Pathway Monitor initialized (basic)');
+        return;
+    }
+    
+    // Update UI
+    updatePathwayUI(report);
+    
+    // Listen for health updates
+    window.addEventListener('pathwayHealthUpdate', (e) => {
+        updatePathwayStatus(e.detail);
+    });
+}
+
+function updatePathwayUI(report) {
+    // Update stats
+    document.getElementById('pathwayValidCount').textContent = report.stats.validPathways;
+    document.getElementById('pathwayWarningCount').textContent = report.stats.warnings;
+    document.getElementById('pathwayErrorCount').textContent = report.stats.invalidPathways;
+    document.getElementById('pathwayTotalCount').textContent = report.stats.totalPathways;
+    
+    // Update overall status
+    const statusBadge = document.getElementById('pathwayOverallStatus');
+    const statusDot = document.getElementById('pathwayStatusDot');
+    
+    if (report.health.overall === 'healthy') {
+        statusBadge.className = 'card-badge success';
+        statusBadge.textContent = 'Healthy';
+        if (statusDot) {
+            statusDot.className = 'status-dot online';
+        }
+    } else if (report.health.overall === 'warning') {
+        statusBadge.className = 'card-badge warning';
+        statusBadge.textContent = 'Warning';
+        if (statusDot) {
+            statusDot.className = 'status-dot warning';
+        }
+    } else {
+        statusBadge.className = 'card-badge error';
+        statusBadge.textContent = 'Error';
+        if (statusDot) {
+            statusDot.className = 'status-dot error';
+        }
+    }
+    
+    // Update configuration
+    document.getElementById('configApiBase').textContent = report.config.apiBaseUrl;
+    document.getElementById('configTotalPages').textContent = report.config.totalPages;
+    document.getElementById('configTotalEndpoints').textContent = report.config.totalEndpoints;
+    
+    // Update pathway lists
+    renderPathways('navigationPathways', report.validations.navigation);
+    renderPathways('apiPathways', report.validations.api);
+    renderPathways('storagePathways', report.validations.storage);
+    renderPathways('filePathways', report.validations.files);
+}
+
+function renderPathways(containerId, pathways) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (pathways.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No pathways found</div>';
+        return;
+    }
+    
+    container.innerHTML = pathways.map(pathway => `
+        <div class="pathway-item">
+            <div>
+                <div class="pathway-name">
+                    ${pathway.name}
+                </div>
+                <div class="pathway-path">${pathway.path || pathway.endpoint || pathway.key || ''}</div>
+                ${pathway.message ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${pathway.message}</div>` : ''}
+            </div>
+            <div class="pathway-status ${pathway.status}">
+                <i class="fas fa-${pathway.status === 'valid' ? 'check' : pathway.status === 'warning' ? 'exclamation-triangle' : 'times'}"></i>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updatePathwayStatus(summary) {
+    // Update status dot in sidebar
+    const statusDot = document.getElementById('pathwayStatusDot');
+    if (statusDot) {
+        if (summary.status === 'healthy') {
+            statusDot.className = 'status-dot online';
+        } else if (summary.status === 'warning') {
+            statusDot.className = 'status-dot warning';
+        } else {
+            statusDot.className = 'status-dot error';
+        }
+    }
+}
+
+function showPathwayMap() {
+    const map = PathwayMonitor.getPathwayMap();
+    console.log('Pathway Map:', map);
+    alert('Pathway Map logged to console. Check Developer Tools (F12).');
+}
+
+async function testAllPathways() {
+    alert('Running comprehensive pathway tests...');
+    await PathwayMonitor.runFullDiagnostics();
+    const report = PathwayMonitor.getReport();
+    updatePathwayUI(report);
+    alert(`Tests complete!\n\nValid: ${report.stats.validPathways}\nWarnings: ${report.stats.warnings}\nErrors: ${report.stats.invalidPathways}`);
+}
+
+function viewDocumentation() {
+    // Open documentation in new tab
+    window.open('../Bhuban video stream app/PATHWAY_SYSTEM.md', '_blank');
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPathwaySystem);
+} else {
+    initPathwaySystem();
+}
+</script>

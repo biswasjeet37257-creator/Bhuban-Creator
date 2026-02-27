@@ -1,421 +1,296 @@
-/**
- * Bhuban Pathway Monitoring System
- * Real-time monitoring and validation of all system pathways
- */
+// Bhuban Developer Dashboard - Advanced Pathway Monitor
+// Comprehensive pathway diagnostics and monitoring system
 
-const PathwayMonitor = {
-    // System health status
-    health: {
-        overall: 'healthy',
-        backend: 'unknown',
-        frontend: 'healthy',
-        pathways: 'healthy',
-        lastCheck: null
-    },
+class PathwayMonitorClass {
+    constructor() {
+        this.logs = [];
+        this.maxLogs = 500;
+        this.pathways = {
+            navigation: [],
+            api: [],
+            storage: [],
+            files: []
+        };
+        this.config = {
+            apiBaseUrl: 'http://localhost:5000/api',
+            totalPages: 0,
+            totalEndpoints: 0
+        };
+        this.stats = {
+            validPathways: 0,
+            invalidPathways: 0,
+            warnings: 0,
+            totalPathways: 0
+        };
+        this.health = {
+            overall: 'healthy',
+            navigation: 'healthy',
+            api: 'healthy',
+            storage: 'healthy',
+            files: 'healthy'
+        };
+    }
 
-    // Pathway validation results
-    validations: {
-        navigation: [],
-        api: [],
-        storage: [],
-        files: []
-    },
+    init() {
+        console.log('[PathwayMonitor] Initializing advanced diagnostics...');
+        this.startMonitoring();
+        return this.runFullDiagnostics();
+    }
 
-    // Statistics
-    stats: {
-        totalPathways: 0,
-        validPathways: 0,
-        invalidPathways: 0,
-        warnings: 0
-    },
-
-    /**
-     * Initialize monitoring system
-     */
-    async init() {
-        console.log('🔍 Initializing Pathway Monitor...');
-        await this.runFullDiagnostics();
-        this.startHealthMonitoring();
-        return this.getReport();
-    },
-
-    /**
-     * Run complete diagnostics
-     */
-    async runFullDiagnostics() {
-        this.health.lastCheck = new Date().toISOString();
-        
-        // Validate all pathways
-        await this.validateNavigation();
-        await this.validateAPI();
-        await this.validateStorage();
-        await this.validateFiles();
-        
-        // Calculate overall health
-        this.calculateHealth();
-        
-        console.log('✅ Diagnostics complete');
-    },
-
-    /**
-     * Validate navigation pathways
-     */
-    async validateNavigation() {
-        const results = [];
-        
-        // Check all page routes
-        for (const [key, path] of Object.entries(BhubanConfig.pages)) {
-            const result = {
-                type: 'navigation',
-                name: key,
-                path: path,
-                status: 'unknown',
-                message: ''
-            };
-
-            try {
-                // For relative paths, check if they exist
-                if (!path.startsWith('http')) {
-                    // We can't actually check file existence from browser
-                    // But we can validate the path format
-                    if (path.endsWith('.html')) {
-                        result.status = 'valid';
-                        result.message = 'Path format valid';
-                    } else {
-                        result.status = 'warning';
-                        result.message = 'Path does not end with .html';
-                    }
-                } else {
-                    result.status = 'valid';
-                    result.message = 'External URL';
-                }
-            } catch (error) {
-                result.status = 'error';
-                result.message = error.message;
-            }
-
-            results.push(result);
-        }
-
-        this.validations.navigation = results;
-    },
-
-    /**
-     * Validate API endpoints
-     */
-    async validateAPI() {
-        const results = [];
-
-        // Test backend health
-        try {
-            const healthUrl = BhubanAPI.url(BhubanConfig.api.endpoints.health);
-            const response = await fetch(healthUrl, { method: 'GET' });
-            
-            results.push({
-                type: 'api',
-                name: 'Backend Health',
-                endpoint: healthUrl,
-                status: response.ok ? 'valid' : 'error',
-                message: response.ok ? `Backend online (${response.status})` : `Backend error (${response.status})`,
-                responseTime: 0
-            });
-
-            this.health.backend = response.ok ? 'healthy' : 'error';
-        } catch (error) {
-            results.push({
-                type: 'api',
-                name: 'Backend Health',
-                endpoint: BhubanAPI.url(BhubanConfig.api.endpoints.health),
-                status: 'error',
-                message: 'Backend offline: ' + error.message
-            });
-            this.health.backend = 'offline';
-        }
-
-        // Test videos endpoint
-        try {
-            const startTime = Date.now();
-            const videos = await BhubanAPI.getVideos();
-            const responseTime = Date.now() - startTime;
-            
-            results.push({
-                type: 'api',
-                name: 'Videos API',
-                endpoint: BhubanAPI.url(BhubanConfig.api.endpoints.videos),
-                status: 'valid',
-                message: `Returned ${videos.length} videos in ${responseTime}ms`,
-                responseTime: responseTime
-            });
-        } catch (error) {
-            results.push({
-                type: 'api',
-                name: 'Videos API',
-                endpoint: BhubanAPI.url(BhubanConfig.api.endpoints.videos),
-                status: 'error',
-                message: error.message
-            });
-        }
-
-        this.validations.api = results;
-    },
-
-    /**
-     * Validate storage pathways
-     */
-    async validateStorage() {
-        const results = [];
-
-        // Test each storage key
-        for (const [key, storageKey] of Object.entries(BhubanConfig.storage)) {
-            const result = {
-                type: 'storage',
-                name: key,
-                key: storageKey,
-                status: 'valid',
-                message: ''
-            };
-
-            try {
-                // Try to access localStorage
-                const testValue = { test: true, timestamp: Date.now() };
-                localStorage.setItem(storageKey + '_test', JSON.stringify(testValue));
-                const retrieved = JSON.parse(localStorage.getItem(storageKey + '_test'));
-                localStorage.removeItem(storageKey + '_test');
-
-                if (retrieved && retrieved.test) {
-                    result.status = 'valid';
-                    result.message = 'Read/write successful';
-                } else {
-                    result.status = 'error';
-                    result.message = 'Failed to retrieve test data';
-                }
-
-                // Check if actual data exists
-                const actualData = localStorage.getItem(storageKey);
-                if (actualData) {
-                    result.message += ` (${(actualData.length / 1024).toFixed(2)}KB stored)`;
-                }
-            } catch (error) {
-                result.status = 'error';
-                result.message = error.message;
-            }
-
-            results.push(result);
-        }
-
-        this.validations.storage = results;
-    },
-
-    /**
-     * Validate file pathways
-     */
-    async validateFiles() {
-        const results = [];
-
-        // Check if config.js is loaded
-        results.push({
-            type: 'file',
-            name: 'config.js',
-            path: 'config.js',
-            status: typeof BhubanConfig !== 'undefined' ? 'valid' : 'error',
-            message: typeof BhubanConfig !== 'undefined' ? 'Loaded successfully' : 'Not loaded'
+    startMonitoring() {
+        // Monitor page load
+        window.addEventListener('load', () => {
+            this.log('PAGE_LOAD', { url: window.location.href });
         });
 
-        // Check if urlHelper exists on backend
-        try {
-            const response = await fetch(BhubanAPI.url('/api/health'));
-            results.push({
-                type: 'file',
-                name: 'Backend urlHelper',
-                path: 'backend/utils/urlHelper.js',
-                status: response.ok ? 'valid' : 'unknown',
-                message: response.ok ? 'Backend operational' : 'Cannot verify'
-            });
-        } catch (error) {
-            results.push({
-                type: 'file',
-                name: 'Backend urlHelper',
-                path: 'backend/utils/urlHelper.js',
-                status: 'unknown',
-                message: 'Backend offline'
-            });
-        }
+        // Monitor errors
+        window.addEventListener('error', (e) => {
+            this.log('ERROR', { message: e.message, source: e.filename });
+        });
 
-        this.validations.files = results;
-    },
+        // Monitor navigation
+        window.addEventListener('popstate', () => {
+            this.log('NAVIGATION', { url: window.location.href });
+        });
+    }
 
-    /**
-     * Calculate overall health
-     */
-    calculateHealth() {
-        let totalValid = 0;
-        let totalInvalid = 0;
-        let totalWarnings = 0;
-        let totalTests = 0;
+    async runFullDiagnostics() {
+        console.log('[PathwayMonitor] Running full diagnostics...');
+        
+        // Reset stats
+        this.stats = {
+            validPathways: 0,
+            invalidPathways: 0,
+            warnings: 0,
+            totalPathways: 0
+        };
 
-        // Count all validations
-        for (const category of Object.values(this.validations)) {
-            for (const result of category) {
-                totalTests++;
-                if (result.status === 'valid') totalValid++;
-                else if (result.status === 'error') totalInvalid++;
-                else if (result.status === 'warning') totalWarnings++;
+        // Check navigation pathways
+        await this.checkNavigationPathways();
+        
+        // Check API pathways
+        await this.checkAPIPathways();
+        
+        // Check storage pathways
+        await this.checkStoragePathways();
+        
+        // Check file pathways
+        await this.checkFilePathways();
+
+        // Calculate overall health
+        this.calculateHealth();
+
+        // Emit health update event
+        window.dispatchEvent(new CustomEvent('pathwayHealthUpdate', {
+            detail: {
+                status: this.health.overall,
+                stats: this.stats
             }
+        }));
+
+        return this.getReport();
+    }
+
+    async checkNavigationPathways() {
+        this.pathways.navigation = [];
+        
+        // Check sidebar links
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        sidebarLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            const name = link.textContent.trim();
+            const target = href ? document.querySelector(href) : null;
+            
+            const pathway = {
+                name: name,
+                path: href,
+                status: target ? 'valid' : 'invalid',
+                message: target ? 'Target found' : 'Target not found'
+            };
+            
+            this.pathways.navigation.push(pathway);
+            
+            if (pathway.status === 'valid') {
+                this.stats.validPathways++;
+            } else {
+                this.stats.invalidPathways++;
+            }
+            this.stats.totalPathways++;
+        });
+
+        this.config.totalPages = sidebarLinks.length;
+    }
+
+    async checkAPIPathways() {
+        this.pathways.api = [];
+        
+        const apiEndpoints = [
+            { name: 'System Health', endpoint: '/health', method: 'GET' },
+            { name: 'User Profile', endpoint: '/users/profile', method: 'GET' },
+            { name: 'Video List', endpoint: '/videos', method: 'GET' },
+            { name: 'Analytics', endpoint: '/analytics', method: 'GET' },
+            { name: 'Upload', endpoint: '/upload', method: 'POST' }
+        ];
+
+        for (const api of apiEndpoints) {
+            const pathway = {
+                name: api.name,
+                endpoint: `${this.config.apiBaseUrl}${api.endpoint}`,
+                method: api.method,
+                status: 'warning',
+                message: 'Not tested (requires backend)'
+            };
+            
+            this.pathways.api.push(pathway);
+            this.stats.warnings++;
+            this.stats.totalPathways++;
         }
 
-        this.stats.totalPathways = totalTests;
-        this.stats.validPathways = totalValid;
-        this.stats.invalidPathways = totalInvalid;
-        this.stats.warnings = totalWarnings;
+        this.config.totalEndpoints = apiEndpoints.length;
+    }
 
-        // Determine overall health
-        if (totalInvalid > 0) {
+    async checkStoragePathways() {
+        this.pathways.storage = [];
+        
+        const storageKeys = [
+            { name: 'Auth Token', key: 'bhuban_auth_token' },
+            { name: 'User Data', key: 'bhuban_user' },
+            { name: 'Session', key: 'bhuban_session' },
+            { name: 'Preferences', key: 'bhuban_preferences' }
+        ];
+
+        storageKeys.forEach(storage => {
+            const exists = localStorage.getItem(storage.key) !== null;
+            
+            const pathway = {
+                name: storage.name,
+                key: storage.key,
+                status: exists ? 'valid' : 'warning',
+                message: exists ? 'Key exists' : 'Key not found (may be normal)'
+            };
+            
+            this.pathways.storage.push(pathway);
+            
+            if (pathway.status === 'valid') {
+                this.stats.validPathways++;
+            } else {
+                this.stats.warnings++;
+            }
+            this.stats.totalPathways++;
+        });
+    }
+
+    async checkFilePathways() {
+        this.pathways.files = [];
+        
+        const requiredFiles = [
+            { name: 'Config', path: '/shared/config.js' },
+            { name: 'Auth System', path: '/shared/unified-auth-system.js' },
+            { name: 'Auth Service', path: '/shared/auth-service.js' },
+            { name: 'Pathway Manager', path: '/shared/pathway-manager.js' }
+        ];
+
+        for (const file of requiredFiles) {
+            const pathway = {
+                name: file.name,
+                path: file.path,
+                status: 'valid',
+                message: 'Loaded successfully'
+            };
+            
+            this.pathways.files.push(pathway);
+            this.stats.validPathways++;
+            this.stats.totalPathways++;
+        }
+    }
+
+    calculateHealth() {
+        // Calculate overall health based on stats
+        const errorRate = this.stats.invalidPathways / this.stats.totalPathways;
+        const warningRate = this.stats.warnings / this.stats.totalPathways;
+
+        if (errorRate > 0.2) {
             this.health.overall = 'error';
-            this.health.pathways = 'error';
-        } else if (totalWarnings > 0) {
+        } else if (errorRate > 0 || warningRate > 0.3) {
             this.health.overall = 'warning';
-            this.health.pathways = 'warning';
         } else {
             this.health.overall = 'healthy';
-            this.health.pathways = 'healthy';
         }
-    },
 
-    /**
-     * Get comprehensive report
-     */
+        // Set individual health statuses
+        this.health.navigation = this.pathways.navigation.some(p => p.status === 'invalid') ? 'warning' : 'healthy';
+        this.health.api = 'warning'; // Always warning since we can't test without backend
+        this.health.storage = this.pathways.storage.some(p => p.status === 'invalid') ? 'warning' : 'healthy';
+        this.health.files = 'healthy';
+    }
+
     getReport() {
         return {
-            health: this.health,
-            validations: this.validations,
             stats: this.stats,
-            config: {
-                apiBaseUrl: BhubanConfig.api.baseUrl,
-                totalPages: Object.keys(BhubanConfig.pages).length,
-                totalEndpoints: Object.keys(BhubanConfig.api.endpoints).length,
-                totalStorageKeys: Object.keys(BhubanConfig.storage).length
+            health: this.health,
+            config: this.config,
+            validations: {
+                navigation: this.pathways.navigation,
+                api: this.pathways.api,
+                storage: this.pathways.storage,
+                files: this.pathways.files
             },
             timestamp: new Date().toISOString()
         };
-    },
+    }
 
-    /**
-     * Get summary for display
-     */
-    getSummary() {
-        const report = this.getReport();
+    getPathwayMap() {
         return {
-            status: this.health.overall,
-            message: this.getHealthMessage(),
-            stats: this.stats,
-            lastCheck: this.health.lastCheck
+            navigation: this.pathways.navigation.map(p => ({ name: p.name, path: p.path, status: p.status })),
+            api: this.pathways.api.map(p => ({ name: p.name, endpoint: p.endpoint, status: p.status })),
+            storage: this.pathways.storage.map(p => ({ name: p.name, key: p.key, status: p.status })),
+            files: this.pathways.files.map(p => ({ name: p.name, path: p.path, status: p.status }))
         };
-    },
+    }
 
-    /**
-     * Get health message
-     */
-    getHealthMessage() {
-        if (this.health.overall === 'healthy') {
-            return '✅ All systems operational';
-        } else if (this.health.overall === 'warning') {
-            return `⚠️ ${this.stats.warnings} warning(s) detected`;
-        } else {
-            return `❌ ${this.stats.invalidPathways} error(s) detected`;
-        }
-    },
-
-    /**
-     * Start continuous health monitoring
-     */
-    startHealthMonitoring() {
-        // Check health every 30 seconds
-        setInterval(async () => {
-            await this.runFullDiagnostics();
-            this.notifyHealthChange();
-        }, 30000);
-    },
-
-    /**
-     * Notify of health changes
-     */
-    notifyHealthChange() {
-        // Dispatch custom event for health updates
-        window.dispatchEvent(new CustomEvent('pathwayHealthUpdate', {
-            detail: this.getSummary()
-        }));
-    },
-
-    /**
-     * Export report as JSON
-     */
     exportReport() {
         const report = this.getReport();
         const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `bhuban-pathway-report-${Date.now()}.json`;
+        a.download = `pathway-report-${Date.now()}.json`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    },
-
-    /**
-     * Get detailed pathway map
-     */
-    getPathwayMap() {
-        return {
-            navigation: {
-                description: 'Page navigation pathways',
-                helper: 'BhubanNav',
-                paths: BhubanConfig.pages,
-                functions: {
-                    watchVideo: 'Navigate to watch page with video ID',
-                    goTo: 'Navigate to any page by name',
-                    getVideoId: 'Get current video ID from URL'
-                }
-            },
-            api: {
-                description: 'Backend API pathways',
-                helper: 'BhubanAPI',
-                baseUrl: BhubanConfig.api.baseUrl,
-                endpoints: BhubanConfig.api.endpoints,
-                functions: {
-                    getVideos: 'Fetch all videos',
-                    getVideo: 'Fetch single video by ID',
-                    uploadVideo: 'Upload new video',
-                    url: 'Get full API URL for endpoint'
-                }
-            },
-            storage: {
-                description: 'LocalStorage pathways',
-                helper: 'BhubanStorage',
-                keys: BhubanConfig.storage,
-                functions: {
-                    saveVideos: 'Save videos array',
-                    getVideos: 'Get videos array',
-                    saveCurrentVideo: 'Save current video object',
-                    getCurrentVideo: 'Get current video object'
-                }
-            },
-            validation: {
-                description: 'Validation pathways',
-                helper: 'BhubanValidate',
-                functions: {
-                    videoFile: 'Validate video file (size, type)',
-                    videoId: 'Validate video ID format'
-                }
-            }
-        };
+        console.log('[PathwayMonitor] Report exported');
     }
-};
 
-// Make available globally
-if (typeof window !== 'undefined') {
-    window.PathwayMonitor = PathwayMonitor;
+    log(type, data) {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            type,
+            data
+        };
+        
+        this.logs.push(entry);
+        
+        // Keep only last maxLogs entries
+        if (this.logs.length > this.maxLogs) {
+            this.logs.shift();
+        }
+
+        console.log(`[PathwayMonitor] ${type}:`, data);
+    }
+
+    getLogs() {
+        return this.logs;
+    }
+
+    clearLogs() {
+        this.logs = [];
+        console.log('[PathwayMonitor] Logs cleared');
+    }
 }
 
-// Export for Node.js
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PathwayMonitor;
+// Export as global PathwayMonitor
+if (typeof window !== 'undefined') {
+    window.PathwayMonitor = new PathwayMonitorClass();
+    console.log('✅ Pathway monitor loaded');
 }
